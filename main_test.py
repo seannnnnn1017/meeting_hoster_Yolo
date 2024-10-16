@@ -13,6 +13,17 @@ model = YOLO('models/yolov8n-pose.pt')
 show = True
 exit_program = False
 
+# 新增變數以追蹤舉手狀態和時間
+left_hand_raised_time = 0
+right_hand_raised_time = 0
+left_hand_raised_duration = 0.5 # 持續時間為 0.5秒
+right_hand_raised_duration = 0.5 # 持續時間為 0.5秒
+
+# 新增變數以追蹤顯示文字的時間
+left_hand_display_time = 0
+right_hand_display_time = 0
+display_duration = 0.5 # 顯示持續時間為 0.5秒
+
 def screen_capture():
     # 獲取螢幕尺寸
     screen_width = win32api.GetSystemMetrics(0)  # 獲取螢幕寬度
@@ -53,10 +64,45 @@ def screen_capture():
     return img
 
 def draw_full_body_results(frame, result):
+    global left_hand_raised_time, right_hand_raised_time
+    global left_hand_display_time, right_hand_display_time
+
     if result.keypoints is not None:
         keypoints = result.keypoints.xy.cpu().numpy()
         if len(keypoints) > 0 and keypoints.shape[1] > 0:
             keypoints = keypoints[0]  # Process the first detected person only
+
+            # 判斷是否舉手
+            left_hand_raised, right_hand_raised = is_hand_raised(keypoints)
+
+            # 檢查左手舉起的持續時間
+            if left_hand_raised:
+                left_hand_raised_time += 1 / 30  # 假設每秒 30 幀
+            else:
+                left_hand_raised_time = 0  # 重置計時器
+
+            # 檢查右手舉起的持續時間
+            if right_hand_raised:
+                right_hand_raised_time += 1 / 30  # 假設每秒 30 幀
+            else:
+                right_hand_raised_time = 0  # 重置計時器
+
+            # 更新顯示文字的持續時間
+            if left_hand_raised_time >= left_hand_raised_duration:
+                left_hand_display_time = display_duration  # 開始顯示左手舉起的文字
+            else:
+                left_hand_display_time = max(0, left_hand_display_time - (1 / 30))  # 每幀減少顯示時間
+
+            if right_hand_raised_time >= right_hand_raised_duration:
+                right_hand_display_time = display_duration  # 開始顯示右手舉起的文字
+            else:
+                right_hand_display_time = max(0, right_hand_display_time - (1 / 30))  # 每幀減少顯示時間
+
+            # 顯示提示文字
+            if left_hand_display_time > 0:
+                cv2.putText(frame, "Left Hand Raised", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            if right_hand_display_time > 0:
+                cv2.putText(frame, "Right Hand Raised", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
             # Define color for keypoints and connections
             keypoint_color = (0, 255, 0)  # Green color for keypoints
@@ -112,6 +158,42 @@ def draw_full_body_results(frame, result):
                         cv2.line(frame, start_point, end_point, connection_color, 2)
 
     return frame
+
+
+def calculate_head_center(keypoints):
+    head_indices = [0, 1, 2, 3, 4]  # 鼻子, 左眼, 右眼, 左耳, 右耳
+    valid_points = []
+    
+    for idx in head_indices:
+        if idx < len(keypoints):
+            x, y = keypoints[idx]
+            if x > 0 and y > 0:  # 只有當x和y都大於0時才認為是有效的關鍵點
+                valid_points.append([x, y])
+    
+    if valid_points:
+        center = np.mean(valid_points, axis=0)
+        return (int(center[0]), int(center[1]))
+    return None
+
+def is_hand_raised(keypoints):
+    # 定義肩膀和手的索引
+    left_shoulder_idx = 5  # 左肩
+    right_shoulder_idx = 6  # 右肩
+    left_hand_idx = 9  # 左手
+    right_hand_idx = 10  # 右手
+
+    if len(keypoints) > max(left_shoulder_idx, right_shoulder_idx, left_hand_idx, right_hand_idx):
+        left_shoulder = keypoints[left_shoulder_idx]
+        right_shoulder = keypoints[right_shoulder_idx]
+        left_hand = keypoints[left_hand_idx]
+        right_hand = keypoints[right_hand_idx]
+
+        # 判斷手是否高於肩膀
+        left_hand_raised = left_hand[1] < left_shoulder[1]  # 左手是否高於左肩
+        right_hand_raised = right_hand[1] < right_shoulder[1]  # 右手是否高於右肩
+
+        return left_hand_raised, right_hand_raised
+    return False, False
 
 def on_press(key):
     global exit_program, show
