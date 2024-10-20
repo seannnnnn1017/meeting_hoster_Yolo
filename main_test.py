@@ -160,21 +160,6 @@ def draw_full_body_results(frame, result):
     return frame
 
 
-def calculate_head_center(keypoints):
-    head_indices = [0, 1, 2, 3, 4]  # 鼻子, 左眼, 右眼, 左耳, 右耳
-    valid_points = []
-    
-    for idx in head_indices:
-        if idx < len(keypoints):
-            x, y = keypoints[idx]
-            if x > 0 and y > 0:  # 只有當x和y都大於0時才認為是有效的關鍵點
-                valid_points.append([x, y])
-    
-    if valid_points:
-        center = np.mean(valid_points, axis=0)
-        return (int(center[0]), int(center[1]))
-    return None
-
 def is_hand_raised(keypoints):
     # 定義肩膀和手的索引
     left_shoulder_idx = 5  # 左肩
