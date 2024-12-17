@@ -111,9 +111,10 @@ class BoneRecognizeWithPID:
                             target_center = self.center(result, i)
                             if target_center != [0, 0]:
                                 self.track_object(target_center)
-                                if not self.hand_up:
-                                    print(f"Tracking ID: {i + 1}")
-                                    print(f"Position: {target_center}")
+                                diff_x = target_center[0] - self.frame_center[0]
+                                diff_y = target_center[1] - self.frame_center[1]
+                                print(f"Tracking ID: {i + 1}")
+                                print(f"Center Difference: X={diff_x}, Y={diff_y}")
 
                 cv2.putText(annotated_frame, f"FPS: {int(fps)}", (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 cv2.imshow("Bone recognize with PID", annotated_frame)
