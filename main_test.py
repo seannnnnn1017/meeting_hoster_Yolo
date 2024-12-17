@@ -64,7 +64,9 @@ class BoneRecognizeWithPID:
         self.pid_horizontal = PIDController(0.1, 0.01, 0.05)
         self.pid_vertical = PIDController(0.1, 0.01, 0.05)
 
-        self.frame_center = [640 / 2, 480 / 2]  # 假設解析度為 640x480
+        self.frame_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.frame_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        self.frame_center = [self.frame_width / 2, self.frame_height / 2]  # 動態讀取解析度中心
         self.hand_up_ID = {}
         self.hand_up = False
         self.hand_up_man = None
