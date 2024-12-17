@@ -93,6 +93,8 @@ class BoneRecognizeWithPID:
         self.motor.set_angle('horizontal', new_horizontal_angle)
         self.motor.set_angle('vertical', new_vertical_angle)
 
+        return new_horizontal_angle, new_vertical_angle
+
     def run(self):
         while self.cap.isOpened():
             success, frame = self.cap.read()
@@ -110,11 +112,12 @@ class BoneRecognizeWithPID:
                         if name == "person":
                             target_center = self.center(result, i)
                             if target_center != [0, 0]:
-                                self.track_object(target_center)
+                                new_horizontal_angle, new_vertical_angle = self.track_object(target_center)
                                 diff_x = target_center[0] - self.frame_center[0]
                                 diff_y = target_center[1] - self.frame_center[1]
                                 print(f"Tracking ID: {i + 1}")
                                 print(f"Center Difference: X={diff_x}, Y={diff_y}")
+                                print(f"Motor Angles - Horizontal: {new_horizontal_angle:.2f}, Vertical: {new_vertical_angle:.2f}")
 
                 cv2.putText(annotated_frame, f"FPS: {int(fps)}", (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 cv2.imshow("Bone recognize with PID", annotated_frame)
