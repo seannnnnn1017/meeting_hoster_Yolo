@@ -48,7 +48,8 @@ class MotorController:
             self.horizontal_servo.ChangeDutyCycle(duty_cycle)
         elif axis == 'vertical':
             self.vertical_angle = max(50, min(130, angle))
-            duty_cycle = 2.5 + (self.vertical_angle / 18)
+            adjusted_angle = 90 - (angle - 90)  # 調整垂直角度: 低頭是90-度數，抬頭是90+度數
+            duty_cycle = 2.5 + (adjusted_angle / 18)
             self.vertical_servo.ChangeDutyCycle(duty_cycle)
 
     def cleanup(self):
